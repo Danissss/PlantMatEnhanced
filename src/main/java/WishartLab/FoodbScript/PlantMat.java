@@ -100,9 +100,10 @@ public class PlantMat {
 		
 		
 		// for each combination of OH poisition, get all combination of sugar
-		Integer[] sugar_list = new_uti.GetSugarIndexSet();
-		HashMap<Integer,String> sugarmap = new_uti.SugarGroup();
-		HashMap<Integer,Integer> sugerindex = new_uti.SugarIndex();
+		Sugars sugar = new Sugars();
+		Integer[] sugar_list = sugar.GetSugarIndexSet();
+		HashMap<Integer,String> sugarmap = sugar.SugarGroup();
+		HashMap<Integer,Integer> sugerindex = sugar.SugarIndex();
 		
 		
 		if (sugar_list.length < OH_list.size()) {
@@ -651,42 +652,10 @@ public class PlantMat {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		
 		PlantMat fdb = new PlantMat();
 		fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2]));
-
-//		CommandLineParser parser = new DefaultParser();
-//		String filetype = null;
-//		String file_name = null;
-//		int number_core = 1;
-//		boolean need_help = false;
-//		String outputfiletype = null;
-//		int exception_time = 0;
-//		
-//	    try {
-//	        // parse the command line arguments
-//	        CommandLine line = parser.parse( PlantMatAPI.generateOptions() , args );
-//	        if( line.hasOption("threadNumber")) {
-//	        		// if thread number existing, then exception_time has to exist
-//	        }
-//	        if( line.hasOption( "filename" ) ) {
-//	            // initialise the member variable
-//	        		file_name = line.getOptionValue( "filename" );
-//	        }
-//	    }
-//	    catch( ParseException exp ) {
-//	        // oops, something went wrong
-//	        System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
-//	    }
-//	    
-//	    
-//	    
-//	    if(number_core == 1) {
-//			PlantMat fdb = new PlantMat();
-//			fdb.TransformerFoodbCompound(file_name);
-//	    }else {
-//	    		PlantMat fdb = new PlantMat();
-//	    		fdb.runPlantMatMultiThreading(number_core, file_name, exception_time);
-//	    }
+		
 	}
 	
 	
