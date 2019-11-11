@@ -1,4 +1,4 @@
-package WishartLab.FoodbScript;
+package WishartLab.PlantGlycosider;
 
 
 import org.apache.commons.cli.Option;

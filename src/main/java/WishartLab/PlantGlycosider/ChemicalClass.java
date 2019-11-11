@@ -1,4 +1,4 @@
-package WishartLab.FoodbScript;
+package WishartLab.PlantGlycosider;
 
 import org.openscience.cdk.interfaces.IAtomContainer;
 

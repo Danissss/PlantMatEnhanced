@@ -1,8 +1,9 @@
-package WishartLab.FoodbScript;
+package WishartLab.PlantGlycosider;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,6 +15,9 @@ import org.openscience.cdk.exception.InvalidSmilesException;
 import org.openscience.cdk.inchi.InChIGenerator;
 import org.openscience.cdk.inchi.InChIGeneratorFactory;
 import org.openscience.cdk.interfaces.IAtomContainer;
+import org.openscience.cdk.interfaces.IAtomContainerSet;
+import org.openscience.cdk.interfaces.IChemObjectBuilder;
+import org.openscience.cdk.io.SDFWriter;
 import org.openscience.cdk.layout.StructureDiagramGenerator;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.smiles.SmilesParser;
@@ -162,8 +166,60 @@ public class Utility {
 	
 
 	
+	/**
+	 * Different than TransformSmilesToContainer because this function don't consider the sugar attach position
+	 * @param smiles
+	 * @return
+	 */
+	public IAtomContainer parseSmilesToContainer(String smiles) {
+		
+		
+		IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance();
+		SmilesParser smiParser = new SmilesParser(builder);
+		IChemObjectBuilder containerBuilder = SilentChemObjectBuilder.getInstance();
+		IAtomContainer mole = containerBuilder.newAtomContainer();
+		
+		try {
+			
+			mole = smiParser.parseSmiles(smiles);
+			
+		} catch (InvalidSmilesException e) {
+			
+			mole = null;
+		}
+		
+		return mole;
+		
+	}
 	
 	
+	/**
+	 * write the IAtomContainer to SDF
+	 * @param uniqueContainer
+	 * @param compound_inchikey
+	 */
+	public void saveIAtomContainerToSDF(IAtomContainerSet uniqueContainer, String compound_inchikey) {
+		String current_dir = System.getProperty("user.dir");
+		try {
+			FileWriter fw = new FileWriter(String.format("%s/generatedfolder/%s.sdf", current_dir, compound_inchikey), true);
+			SDFWriter sdfwriter = new SDFWriter(fw);			        
+	        
+	        for(int i = 0; i < uniqueContainer.getAtomContainerCount(); i++) {
+				IAtomContainer mole = Utility.Generate2DCoordinate(uniqueContainer.getAtomContainer(i));
+				if (mole != null) {
+					sdfwriter.write(mole);
+				}	
+			}
+	        
+			sdfwriter.close();
+	        fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CDKException e) {
+			e.printStackTrace();
+		}
+        
+	}
 	
 	
 	/**

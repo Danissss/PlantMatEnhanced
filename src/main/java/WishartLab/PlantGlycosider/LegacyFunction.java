@@ -1,4 +1,4 @@
-package WishartLab.FoodbScript;
+package WishartLab.PlantGlycosider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,6 @@ import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomContainerSet;
 import org.openscience.cdk.interfaces.IBond;
-import org.openscience.cdk.interfaces.IChemObjectBuilder;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.smiles.SmiFlavor;
 import org.openscience.cdk.smiles.SmilesGenerator;
@@ -18,10 +17,13 @@ import org.openscience.cdk.smiles.SmilesParser;
 import org.openscience.cdk.tools.CDKHydrogenAdder;
 import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 
-import ambit2.smarts.SMIRKSManager;
-import ambit2.smarts.SMIRKSReaction;
 import ambit2.smarts.query.SmartsPatternCDK;
-
+/**
+ * 
+ * @author xuan
+ * This class is not used; 
+ * This class is only for storing used code;
+ */
 public class LegacyFunction {
 	
 	
@@ -291,6 +293,91 @@ public class LegacyFunction {
 	}
 	
 	
+	
+//	/**
+//	 * parse and transformer all compounds from foodb
+//	 * get all transformerable compounds and save them to directory
+//	 * then get these file add to new food
+//	 * @param data_file
+//	 * @throws IOException 
+//	 * @throws InterruptedException 
+//	 */
+//	public void TransformerFoodbCompound(String data_file) throws IOException, InterruptedException {
+//		
+////		final CSVParser parser = new CSVParserBuilder().withSeparator('\t').build();
+////		final CSVReader reader = new CSVReaderBuilder(new StringReader(data_file)).withCSVParser(parser).build();
+//		PlantGlycosider fdb = new PlantGlycosider();
+//		IChemObjectBuilder builder = SilentChemObjectBuilder.getInstance(); // access singleton instance of factory
+//		SmilesParser smiParser = new SmilesParser(builder);
+//		Reader reader = Files.newBufferedReader(Paths.get(data_file));
+//        CSVReader csvReader = new CSVReader(reader);
+//        ArrayList<String> transformed_holder = new ArrayList<String>();
+//        ArrayList<String> Exception = new ArrayList<String>(); // should store inchikey
+//        String[] tmp;
+//		while ((tmp = csvReader.readNext()) != null) {
+//			System.out.println(tmp[0]);
+//			String[] line = tmp[0].split("\t");
+//			
+////			String food_id = line[0].replace("\"", "");
+//			String compound_smiles = line[1].replace("\"", "");
+//			String compound_inchikey = line[2].replace("\"", "");
+//			
+//			if(transformed_holder.contains(compound_inchikey)) {
+//				// already did transformation
+//				// just extract the file that contain all the file
+//				continue;
+//			}
+//			else {
+//				transformed_holder.add(compound_inchikey);
+//				try {
+//					ArrayList<String> transformedSmiles = fdb.PreformTransformation(smiParser.parseSmiles(compound_smiles));					
+//					IAtomContainerSet uniqueContainer = RemoveDupliation(transformedSmiles);
+////					System.out.println(String.format("number of transformation after remove=> %d", non_duplicate_transformedSmiles.size()));
+//					
+//
+//			        FileWriter fw = new FileWriter(String.format("%s/generatedfolder/%s.sdf", current_dir,compound_inchikey), true);
+//			        SDFWriter sdfwriter = new SDFWriter(fw);			        
+//			        
+//			        for(int i = 0; i < uniqueContainer.getAtomContainerCount(); i++) {
+//						IAtomContainer mole = Utility.Generate2DCoordinate(uniqueContainer.getAtomContainer(i));
+//						if (mole != null) {
+//							sdfwriter.write(mole);
+//						}
+//						
+//					}
+//			        
+//					sdfwriter.close();
+//			        fw.close();
+//					
+//					
+//					
+//				} catch (InvalidSmilesException e) {
+//					 e.printStackTrace();
+//					Exception.add(compound_inchikey);
+//				} catch (Exception e) {
+//					 e.printStackTrace();
+//					Exception.add(compound_inchikey);
+//				}
+//				
+//			}
+//			
+////			TimeUnit.SECONDS.sleep(2);
+//			break;
+//		}
+//		
+//		if(Exception.size()>0) {
+//			File file = new File(String.format("%s/generatedfolder/compound_transformation_Exception.csv",current_dir));
+//			FileWriter outputfile = new FileWriter(file); 
+//			CSVWriter writer = new CSVWriter(outputfile);
+//			for(int i = 0; i < Exception.size(); i++) {
+//				writer.writeNext(new String[] {Exception.get(i)});				
+//			}
+//			writer.close();
+//		}
+//		
+//		
+//		csvReader.close();
+//	}
 	
 	
 	
