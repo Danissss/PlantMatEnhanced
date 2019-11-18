@@ -1,5 +1,7 @@
 package WishartLab.PlantGlycosider;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,79 +14,104 @@ import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomContainerSet;
 import org.openscience.cdk.interfaces.IBond;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
+import org.openscience.cdk.io.SDFWriter;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.smiles.SmilesParser;
+import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 
 public class GlycosiderUtility {
 	
 	
+	public static void saveIAtomContainerToSDF(IAtomContainer uniqueContainer) {
+		String current_dir = System.getProperty("user.dir");
+		try {
+			FileWriter fw = new FileWriter(String.format("%s/generatedfolder/test.sdf", current_dir), true);
+			SDFWriter sdfwriter = new SDFWriter(fw);			        
+	        
+			sdfwriter.write(AtomContainerManipulator.removeHydrogens(uniqueContainer));
+			
+			sdfwriter.close();
+	        fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CDKException e) {
+			e.printStackTrace();
+		}
+        
+	}
+	
 	/**
 	 * combine two IAtomContainer, they must have charge on the atom of interests
-	 * 
+	 * atom is not mapped when comes in. Reference: https://forum.knime.com/t/cdk-atom-numbering/4431/4
 	 * order: add sugar to mole
-	 * @param mole
-	 * @param sugar
+	 * mole_index.length should be same as sugar_set.size()
+	 * @param mole don't contain chargesm but the the charge info is in charge_table 
+	 * @param mole_index the index for mole to add sugar
+	 * @param sugar_set Already contain the charges 
 	 * @return
 	 * @throws CDKException 
 	 */
-	public static IAtomContainer CombineContainers(IAtomContainer mole, double[] charge_table, IAtomContainerSet sugar) throws CDKException {
+	public static IAtomContainer CombineContainers(IAtomContainer mole, int[] mole_index, 
+			IAtomContainerSet sugar_set) throws CDKException {
+		for(int c = 0; c < mole_index.length; c++) {
+			// for each iteration; add property to compound's O(-H) atom
+			// since the sugar_set.getAtomContainer(n) already contain the property sugar
+			// remove the mole and sugar property, so property will be reset in each iteration
+			mole.getAtom(mole_index[c]).setProperty("index", "mole");
+			
+			IAtomContainer sugar = sugar_set.getAtomContainer(c);
+			AtomContainerManipulator.convertImplicitToExplicitHydrogens(mole);
+			AtomContainerManipulator.convertImplicitToExplicitHydrogens(sugar);
+			
+			mole.add(sugar);
+			
+			int original_atom_index = new Integer(0);
+			int sugar_atom_index = new Integer(0);
+			int sugar_atom_remove_index = new Integer(0);
+			for(int k = 0; k < mole.getAtomCount();k++) {
 
-		for(int c = 0; c < charge_table.length; c++) {
-			mole.add(sugar.getAtomContainer(c));
-			int index_1 = new Integer(0);
-			int index_2 = new Integer(0);
-			double charge = charge_table[c];
-			for (int k = 0; k < mole.getAtomCount(); k++) {
-				
-				IAtom atoms = mole.getAtom(k);
-				if (atoms.getCharge() != null) {					
-					// find sugar molecule mark
-					// with garantee of number of sugar can't exceed the number of OH, add sugar one by one
-					// need to charge for order
-					if (atoms.getCharge() == 1.0) {
-						index_1 = k;
-						atoms.setCharge(null);
-					} 
-					
-					// find original molecule mark
-					else if (atoms.getCharge() == charge) {
-						List<IAtom> nearestAtom = mole.getConnectedAtomsList(atoms);
+				if (mole.getAtom(k).getProperty("index") != null) {
+					if(mole.getAtom(k).getProperty("index").equals("mole")) {
+						original_atom_index = k;
+					}else if(mole.getAtom(k).getProperty("index").equals("sugar")) {
+						// find the nearest carbon for sugar; since mole is uncertain
+						sugar_atom_index = k;
+						List<IAtom> nearestAtom = mole.getConnectedAtomsList(mole.getAtom(k));
 						for (int i = 0; i < nearestAtom.size(); i++) {
 							if(nearestAtom.get(i).getSymbol().equals("C")) {
-								int real_connect = mole.indexOf(nearestAtom.get(i));
-								index_2 = real_connect;
-								mole.removeBond(atoms, nearestAtom.get(i));
+								sugar_atom_remove_index = mole.indexOf(nearestAtom.get(i));
 							}
 						}
-						
-						atoms.setCharge(null);
+
+					}else {
+						continue;
 					}
+
 				}
-				
-				
 			}
-			mole.addBond(index_1, index_2, IBond.Order.SINGLE);
-			for (int k = 0; k < mole.getAtomCount(); k++) {
-				IAtom atoms = mole.getAtom(k);
-				if (atoms.getCharge() != null) {
-					if(atoms.getCharge() == 1.0) {
-						atoms.setCharge(null);
-					}
-					
+			
+			
+
+			mole.addBond(original_atom_index, sugar_atom_remove_index, IBond.Order.SINGLE);
+			mole.removeBond(mole.getAtom(sugar_atom_index), mole.getAtom(sugar_atom_remove_index));
+			
+			// remove extra valence on atom O
+			List<IAtom> nearestAtom = mole.getConnectedAtomsList(mole.getAtom(original_atom_index));
+			for (int i = 0; i < nearestAtom.size(); i++) {
+				//System.out.println(nearestAtom.get(i).getSymbol());
+				if(nearestAtom.get(i).getSymbol().equals("H")) {
+					mole.removeBond(nearestAtom.get(i), mole.getAtom(original_atom_index));
+				}
+			}
+			
+			// remove all properties
+			for(int k = 0; k < mole.getAtomCount();k++) {
+				if (mole.getAtom(k).getProperty("index") != null) {
+					mole.getAtom(k).removeProperty("index");
 				}
 			}
 			
 		}
-		
-		// remove the charges
-		for (int k = 0; k < mole.getAtomCount(); k++) {
-			IAtom atoms = mole.getAtom(k);
-			
-			if (atoms.getCharge() != null) {
-				atoms.setCharge(null);
-			}
-		}
-		
 		return mole;
 	}
 	

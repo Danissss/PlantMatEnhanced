@@ -42,7 +42,7 @@ public class Sugars {
 		output.put(2, "OCC1OC(O)C(O)C1O");
 		// pentoses -> Deoxy Sugars // N.V. BHAGAVAN, in Medical Biochemistry (Fourth Edition), 2002 (Deoxy Sugars)
 		output.put(3, "OCC1OC(O)CC1O");
-		// hexoses -> 
+//		// hexoses -> 
 		output.put(4, "OCC1OC(O)C(O)C(O)C1O");
 		// hexoses -> Ketohexoses
 		output.put(5, "OCC1(O)OCC(O)C(O)C1O");

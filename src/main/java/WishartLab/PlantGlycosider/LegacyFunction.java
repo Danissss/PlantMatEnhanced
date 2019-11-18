@@ -294,6 +294,73 @@ public class LegacyFunction {
 	
 	
 	
+	
+	
+	public static IAtomContainer CombineContainers(IAtomContainer mole, Integer[] charge_table, IAtomContainerSet sugar) throws CDKException {
+		
+		for(int c = 0; c < charge_table.length; c++) {
+			
+			mole.add(sugar.getAtomContainer(c));
+			int index_1 = new Integer(0);
+			int index_2 = new Integer(0);
+			double charge = charge_table[c];
+			for (int k = 0; k < mole.getAtomCount(); k++) {
+				
+				IAtom atoms = mole.getAtom(k);
+				if (atoms.getCharge() != null) {
+					
+					if (atoms.getCharge() == 1.0) {
+						index_1 = k;
+						atoms.setCharge(null);
+					} 
+					
+					// find original molecule mark
+					else if (atoms.getCharge() == charge) {
+						List<IAtom> nearestAtom = mole.getConnectedAtomsList(atoms);
+						for (int i = 0; i < nearestAtom.size(); i++) {
+							if(nearestAtom.get(i).getSymbol().equals("C")) {
+								int real_connect = mole.indexOf(nearestAtom.get(i));
+								index_2 = real_connect;
+								mole.removeBond(atoms, nearestAtom.get(i));
+							}
+						}
+						
+						atoms.setCharge(null);
+					}
+				}
+				
+				
+			}
+			mole.addBond(index_1, index_2, IBond.Order.SINGLE);
+			for (int k = 0; k < mole.getAtomCount(); k++) {
+				IAtom atoms = mole.getAtom(k);
+				if (atoms.getCharge() != null) {
+					if(atoms.getCharge() == 1.0) {
+						atoms.setCharge(null);
+					}
+					
+				}
+			}
+			
+		}
+		
+		// remove the charges
+		for (int k = 0; k < mole.getAtomCount(); k++) {
+			IAtom atoms = mole.getAtom(k);
+			
+			if (atoms.getCharge() != null) {
+				atoms.setCharge(null);
+			}
+		}
+		
+		
+		return mole;
+		
+	
+	
+	}
+	
+	
 //	/**
 //	 * parse and transformer all compounds from foodb
 //	 * get all transformerable compounds and save them to directory

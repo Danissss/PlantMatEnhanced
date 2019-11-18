@@ -59,9 +59,8 @@ public class AppTest
 		
 		
 		IAtomContainerSet sugar_mole_set = builder.newInstance(IAtomContainerSet.class);
-		sugar_mole_set.addAtomContainer(CheminformaticUtility.TransformSmilesToContainer("OC1COC(O)C(O)C1O",5));
+		sugar_mole_set.addAtomContainer(CheminformaticUtility.TransformSugarSmilesToContainer("OC1COC(O)C(O)C1O",5));
 		
-		GlycosiderUtility.CombineContainers(mole, charge_table, sugar_mole_set);
     }
     
     

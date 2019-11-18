@@ -216,12 +216,12 @@ public class CheminformaticUtility {
 	 * @return
 	 * @throws InvalidSmilesException
 	 */
-	public static IAtomContainer TransformSmilesToContainer(String sugar_smiles, int sugar_index) throws InvalidSmilesException {
+	public static IAtomContainer TransformSugarSmilesToContainer(String sugar_smiles, int sugar_index) throws InvalidSmilesException {
 		
 		SmilesParser sp = new SmilesParser(SilentChemObjectBuilder.getInstance());
 		IAtomContainer sugar_mole = DefaultChemObjectBuilder.getInstance().newInstance(IAtomContainer.class);
 		sugar_mole = sp.parseSmiles(sugar_smiles);
-		sugar_mole.getAtom(sugar_index).setCharge(1.0);
+		sugar_mole.getAtom(sugar_index).setProperty("index", "sugar");
 		
 		return sugar_mole;
 	}
