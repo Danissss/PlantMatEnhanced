@@ -12,6 +12,7 @@ import java.util.Stack;
 import org.openscience.cdk.DefaultChemObjectBuilder;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
+import org.openscience.cdk.graph.ConnectivityChecker;
 import org.openscience.cdk.inchi.InChIGenerator;
 import org.openscience.cdk.inchi.InChIGeneratorFactory;
 import org.openscience.cdk.interfaces.IAtomContainer;
@@ -183,7 +184,7 @@ public class CheminformaticUtility {
 	 * @param uniqueContainer
 	 * @param compound_inchikey
 	 */
-	public static void saveIAtomContainerToSDF(IAtomContainerSet uniqueContainer, String compound_inchikey) {
+	public static void saveIAtomContainerSetToSDF(IAtomContainerSet uniqueContainer, String compound_inchikey) {
 		String current_dir = System.getProperty("user.dir");
 		try {
 			FileWriter fw = new FileWriter(String.format("%s/generatedSDF/%s.sdf", current_dir, compound_inchikey), true);
@@ -306,6 +307,34 @@ public class CheminformaticUtility {
 		return longest;
 	}
 	
+	
+	/**
+	 * split OH out of container and return the longest one 
+	 * based on compare number of atoms
+	 * @param mole
+	 * @return
+	 * @throws CDKException
+	 */
+	public static IAtomContainer SplitContainer(IAtomContainer mole) throws CDKException {		
+		
+		IAtomContainerSet moleset = ConnectivityChecker.partitionIntoMolecules(mole);
+		int num_container = moleset.getAtomContainerCount();
+		if(num_container == 1) {
+			return moleset.getAtomContainer(0);
+		}
+		
+		int highest_count = 0;
+		int index = 0;
+		for(int i = 0; i < num_container; i++) {
+			int num_atom = moleset.getAtomContainer(i).getAtomCount();
+			if(moleset.getAtomContainer(i).getAtomCount() > highest_count) {
+				highest_count = num_atom;
+				index = i;
+			}
+		}
+		
+		return moleset.getAtomContainer(index);
+	}
 	
 	/**
 	 * generate 2d coordinate by giving molecules

@@ -112,6 +112,44 @@ public class GlycosiderUtility {
 		return mole;
 	}
 	
+	/**
+	 * remove duplication based on the inchikey
+	 * @param transformedSmiles
+	 * @return
+	 * @throws CDKException 
+	 */
+	public static IAtomContainerSet RemoveDupliation(IAtomContainerSet transformedSmiles) throws CDKException {
+		ArrayList<String> non_dup = new ArrayList<String>();
+		IChemObjectBuilder containerSetBuilder = SilentChemObjectBuilder.getInstance();
+		IAtomContainerSet non_dup_container = containerSetBuilder.newInstance(IAtomContainerSet.class);
+		InChIGeneratorFactory factory = InChIGeneratorFactory.getInstance();
+		
+		for(int i = 0; i < transformedSmiles.getAtomContainerCount(); i++) {
+			try {
+				IAtomContainer mole = transformedSmiles.getAtomContainer(i);
+				
+				InChIGenerator gen = factory.getInChIGenerator(mole);
+				String inchikey = gen.getInchiKey();
+				if (non_dup.contains(inchikey)) {
+					continue;
+				}else {
+					non_dup.add(inchikey);
+					non_dup_container.addAtomContainer(mole);
+				}
+			} catch (InvalidSmilesException e) {
+				
+				e.printStackTrace();
+				continue;
+			} catch (CDKException e) {
+				
+				e.printStackTrace();
+				continue;
+			}
+		}
+		
+		return non_dup_container;
+	}
+	
 	
 	/**
 	 * remove duplication based on the inchikey

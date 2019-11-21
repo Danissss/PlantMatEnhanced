@@ -50,9 +50,8 @@ import com.opencsv.CSVWriter;
 
 public class PlantGlycosider {
 	
-	private SmilesGenerator smiGen = new SmilesGenerator(SmiFlavor.Isomeric);
-	
-	
+	private PreValidation preval = new PreValidation();
+	private PostValidation postval = new PostValidation();
 	
 	/**
 	 * return empty ArrayList<String> if something goes wrong...
@@ -63,10 +62,11 @@ public class PlantGlycosider {
 	 * @param s_list
 	 * @return
 	 */
-	public ArrayList<String> permutatedCompoundInSmiles(IAtomContainer mole, HashMap<Integer,String> sugar_structure, 
+	public IAtomContainerSet permutatedCompoundInSmiles(IAtomContainer mole, HashMap<Integer,String> sugar_structure, 
 			HashMap<Integer,Integer> sugerindex, Integer[] sugar_list, Integer[] s_list){
 		
-		ArrayList<String> result_smiles = new ArrayList<String>();
+		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
+		IAtomContainerSet result_mole = builder.newInstance(IAtomContainerSet.class);
 		CheminformaticUtility permuated_chem_util = new CheminformaticUtility();
 		
 		ArrayList<Integer[]> temp_sugar_list = permuated_chem_util.GetAllPossibleSet(sugar_list,s_list.length); // temp set will be list of all possible of order of sugars
@@ -84,8 +84,7 @@ public class PlantGlycosider {
 				
 				IAtomContainer copied_mole = mole.clone();
 				IAtomContainer mole_man = AddSugarGroupPermu(copied_mole,oh_list,smiles,smiles_index);
-				result_smiles.add(CheminformaticUtility.SplitContainer(smiGen.create(mole_man)));
-				
+				result_mole.addAtomContainer(CheminformaticUtility.SplitContainer(mole_man));
 				
 			} catch (CloneNotSupportedException e) {
 				// TODO Auto-generated catch block
@@ -100,7 +99,7 @@ public class PlantGlycosider {
 			
 		}
 		
-		return result_smiles;
+		return result_mole;
 		
 		
 		
@@ -114,15 +113,22 @@ public class PlantGlycosider {
 	 * @param mole
 	 * @throws Exception
 	 */
-	public ArrayList<String> PreformTransformation(IAtomContainer mole) throws Exception {
-		ArrayList<String> result_smiles = new ArrayList<String>();
+	public IAtomContainerSet PreformTransformation(IAtomContainer mole, int restrictOH) throws Exception {
+		
+		
+		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
+		IAtomContainerSet result_mole = builder.newInstance(IAtomContainerSet.class);
 		CheminformaticUtility new_uti = new CheminformaticUtility();
 		
 		
 		Set<Integer> OH_list = CheminformaticUtility.GetOHList(mole); // return list of OH
-		if (OH_list.size() > 4) {
-			return result_smiles;
+		
+		if (OH_list.size() > restrictOH) {
+			return result_mole;
 		}
+		
+		
+		
 		ArrayList<Integer[]> combined_list = new ArrayList<Integer[]>();
 		for(int i =  1; i <= OH_list.size(); i++) {
 			new_uti.permutations(OH_list, new Stack<Integer>(), i);
@@ -136,9 +142,6 @@ public class PlantGlycosider {
 		HashMap<Integer,String> sugar_structure = sugar.SugarGroup();
 		HashMap<Integer,Integer> sugerindex = sugar.SugarAttachMapIndex();
 		Integer[] sugar_list = sugar.GetSugarIndexSet(sugerindex); // index of all available sugars
-
-		System.out.println("Number of OHs    : " + OH_list.size());
-		System.out.println("Number of Sugars : " + sugar_list.length);
 		
 		if (sugar_list.length < OH_list.size()) {
 			// if number of sugar is less than number of o-glycoside point, then permuate the possible sugar to add to the list
@@ -152,7 +155,7 @@ public class PlantGlycosider {
 				for(int j = 0; j < combined_list.size(); j++) {
 					
 					Integer[] new_sugar_list = ArrayUtils.addAll(extract_combination.get(i), combined_list.get(j));
-					result_smiles.addAll(permutatedCompoundInSmiles(mole,sugar_structure, sugerindex, sugar_list,new_sugar_list));	
+					result_mole.add(permutatedCompoundInSmiles(mole,sugar_structure, sugerindex, sugar_list,new_sugar_list));	
 				
 				}
 			}
@@ -163,14 +166,14 @@ public class PlantGlycosider {
 			// if number of sugar is larger than position of OHs; 
 			// for each combined_list (list of array of OH position); add each sugar one at time	
 			for(Integer[] s_list : combined_list) {
-				result_smiles.addAll(permutatedCompoundInSmiles(mole,sugar_structure, sugerindex, sugar_list,s_list));		
+				result_mole.add(permutatedCompoundInSmiles(mole,sugar_structure, sugerindex, sugar_list,s_list));		
 			}
 			
 		}
 		
 		
 		
-		return result_smiles;
+		return result_mole;
 		
 		
 	}
@@ -290,11 +293,18 @@ public class PlantGlycosider {
 		int total_num = 0;
 		PlantGlycosider fdb = new PlantGlycosider();
 		try {
-			ArrayList<String> transformedSmiles = fdb.PreformTransformation(CheminformaticUtility.parseSmilesToContainer(smiles));
-			if (transformedSmiles.size() != 0) {
-				CheminformaticUtility.saveIAtomContainerToSDF(GlycosiderUtility.RemoveDupliation(transformedSmiles),inchikey);
-				total_num = transformedSmiles.size();
+			IAtomContainer mole = CheminformaticUtility.parseSmilesToContainer(smiles);
+			if (preval.isCompoundValidate(mole)) {
+				IAtomContainerSet transformedSmiles = fdb.PreformTransformation(mole,4);
+				if (transformedSmiles.getAtomContainerCount() != 0) {
+					IAtomContainerSet postValidateCompound = postval.validateCompound(transformedSmiles);
+					CheminformaticUtility.saveIAtomContainerSetToSDF(postValidateCompound, inchikey);
+					// may not need RemoveDuplication
+					// CheminformaticUtility.saveIAtomContainerSetToSDF(GlycosiderUtility.RemoveDupliation(transformedSmiles),inchikey);
+					total_num = postValidateCompound.getAtomContainerCount();
+				}
 			}
+			
 			
 			
 			
