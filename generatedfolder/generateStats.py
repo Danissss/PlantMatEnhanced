@@ -14,7 +14,7 @@ def calculateExpectedNumber(num_oh, num_sugar):
 
 	total_num = 0;
 	total_num += (num_sugar ** num_oh)
-	for i in range(1,num_oh-1):
+	for i in range(1,num_oh):
 		tmp1 = num_sugar ** (num_oh - i)
 		tmp2 = nCr(num_oh, num_oh - i)
 		total_num += (tmp1 * tmp2)
@@ -23,18 +23,23 @@ def calculateExpectedNumber(num_oh, num_sugar):
 
 def main():
 
-
-	suppl = Chem.SDMolSupplier(sys.argv[1])
-	mol_array = []
-	for mol in suppl:
-		if mol != None:
-			mol_array.append(mol)
-			
-	num_oh = int(sys.argv[2])
-	num_sugar = int(sys.argv[3])
+	num_oh = int(sys.argv[1])
+	num_sugar = int(sys.argv[2])
 																				# num_oh   , num_sugar
 	print("Expected number                : {0}".format(calculateExpectedNumber(num_oh,num_sugar)))
-	print("Number of generated metabolites: {0}".format(len(mol_array)))
+
+
+	# suppl = Chem.SDMolSupplier(sys.argv[1])
+	# mol_array = []
+	# for mol in suppl:
+	# 	if mol != None:
+	# 		mol_array.append(mol)
+			
+	# num_oh = int(sys.argv[2])
+	# num_sugar = int(sys.argv[3])
+	# 																			# num_oh   , num_sugar
+	# print("Expected number                : {0}".format(calculateExpectedNumber(num_oh,num_sugar)))
+	# print("Number of generated metabolites: {0}".format(len(mol_array)))
 
 
 if __name__ == '__main__':

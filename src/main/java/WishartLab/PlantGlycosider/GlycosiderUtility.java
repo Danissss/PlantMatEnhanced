@@ -1,7 +1,5 @@
 package WishartLab.PlantGlycosider;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +12,6 @@ import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomContainerSet;
 import org.openscience.cdk.interfaces.IBond;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
-import org.openscience.cdk.io.SDFWriter;
 import org.openscience.cdk.silent.SilentChemObjectBuilder;
 import org.openscience.cdk.smiles.SmilesParser;
 import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
@@ -22,23 +19,23 @@ import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 public class GlycosiderUtility {
 	
 	
-	public static void saveIAtomContainerToSDF(IAtomContainer uniqueContainer) {
-		String current_dir = System.getProperty("user.dir");
-		try {
-			FileWriter fw = new FileWriter(String.format("%s/generatedfolder/test.sdf", current_dir), true);
-			SDFWriter sdfwriter = new SDFWriter(fw);			        
-	        
-			sdfwriter.write(AtomContainerManipulator.removeHydrogens(uniqueContainer));
-			
-			sdfwriter.close();
-	        fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (CDKException e) {
-			e.printStackTrace();
-		}
-        
-	}
+//	public static void saveIAtomContainerToSDF(IAtomContainer uniqueContainer) {
+//		String current_dir = System.getProperty("user.dir");
+//		try {
+//			FileWriter fw = new FileWriter(String.format("%s/generatedfolder/test.sdf", current_dir), true);
+//			SDFWriter sdfwriter = new SDFWriter(fw);			        
+//	        
+//			sdfwriter.write(AtomContainerManipulator.removeHydrogens(uniqueContainer));
+//			
+//			sdfwriter.close();
+//	        fw.close();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		} catch (CDKException e) {
+//			e.printStackTrace();
+//		}
+//        
+//	}
 	
 	/**
 	 * combine two IAtomContainer, they must have charge on the atom of interests

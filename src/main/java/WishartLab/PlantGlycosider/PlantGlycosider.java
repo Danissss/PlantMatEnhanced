@@ -120,6 +120,9 @@ public class PlantGlycosider {
 		
 		
 		Set<Integer> OH_list = CheminformaticUtility.GetOHList(mole); // return list of OH
+		if (OH_list.size() > 4) {
+			return result_smiles;
+		}
 		ArrayList<Integer[]> combined_list = new ArrayList<Integer[]>();
 		for(int i =  1; i <= OH_list.size(); i++) {
 			new_uti.permutations(OH_list, new Stack<Integer>(), i);
@@ -133,7 +136,7 @@ public class PlantGlycosider {
 		HashMap<Integer,String> sugar_structure = sugar.SugarGroup();
 		HashMap<Integer,Integer> sugerindex = sugar.SugarAttachMapIndex();
 		Integer[] sugar_list = sugar.GetSugarIndexSet(sugerindex); // index of all available sugars
-		
+
 		System.out.println("Number of OHs    : " + OH_list.size());
 		System.out.println("Number of Sugars : " + sugar_list.length);
 		
@@ -282,13 +285,18 @@ public class PlantGlycosider {
 	 * @throws IOException 
 	 * @throws InterruptedException 
 	 */
-	public void TransformerFoodbSingleCompound(String smiles,String inchikey) throws IOException, InterruptedException {
+	public int TransformerFoodbSingleCompound(String smiles,String inchikey) throws IOException, InterruptedException {
 		
-		
+		int total_num = 0;
 		PlantGlycosider fdb = new PlantGlycosider();
 		try {
 			ArrayList<String> transformedSmiles = fdb.PreformTransformation(CheminformaticUtility.parseSmilesToContainer(smiles));
-			CheminformaticUtility.saveIAtomContainerToSDF(GlycosiderUtility.RemoveDupliation(transformedSmiles),inchikey);
+			if (transformedSmiles.size() != 0) {
+				CheminformaticUtility.saveIAtomContainerToSDF(GlycosiderUtility.RemoveDupliation(transformedSmiles),inchikey);
+				total_num = transformedSmiles.size();
+			}
+			
+			
 			
 			
 		} catch (InvalidSmilesException e) {
@@ -297,6 +305,7 @@ public class PlantGlycosider {
 			 e.printStackTrace();
 		}
 		
+		return total_num;
 		
 		
 	}
@@ -311,7 +320,7 @@ public class PlantGlycosider {
 	 * @throws IOException 
 	 */
 	public void runPlantMatMultiThreading(int core, String file_name, int exception_time) throws IOException {
-		HashMap<String,Future<Boolean>> maps = new HashMap<String,Future<Boolean>>();
+		HashMap<String,Future<Integer>> maps = new HashMap<String,Future<Integer>>();
 		
 		int numberCore = Integer.valueOf(core);
 		
@@ -339,13 +348,13 @@ public class PlantGlycosider {
 
 			// check if the file already exist:
 			
-			File existing_file = new File(String.format("%s/generatedfolder/%s.sdf", current_dir,compound_inchikey));
+			File existing_file = new File(String.format("%s/generatedSDF/%s.sdf", current_dir,compound_inchikey));
 			if(existing_file.exists()) {
 				// continue is kind of like goto `[is] tmp = csvReader.readNext()) != null`
 				continue;
 			}
 			
-			Future<Boolean> future = executor.submit(new CallablePlantMat(compound_smiles,compound_inchikey));
+			Future<Integer> future = executor.submit(new CallablePlantMat(compound_smiles,compound_inchikey));
 			maps.put(compound_inchikey, future);
 		}
 		
@@ -353,8 +362,8 @@ public class PlantGlycosider {
 		for(String key : maps.keySet()) {
 			try {
 				// https://docs.oracle.com/javase/6/docs/api/java/util/concurrent/Future.html#get%28long,%20java.util.concurrent.TimeUnit%29
-				boolean result = maps.get(key).get(exception_time, TimeUnit.SECONDS);
-				if(!result) { StatusWriter.writeNext(new String[] {key,"ProgramException"});}
+				Integer result = maps.get(key).get(exception_time, TimeUnit.SECONDS);
+				StatusWriter.writeNext(new String[] {key,Integer.toString(result)});
 				
 			}catch (TimeoutException e) {
 				maps.get(key).cancel(true);
@@ -376,6 +385,64 @@ public class PlantGlycosider {
 		csvReader.close();
 		StatusWriter.close();
 	}
+	
+	
+	/**
+	 * 
+	 * @param core Number of CPU core to utilize
+	 * @param filename The file path. The file should contain smiles
+	 * @param exception_time The time limit for each job
+	 * @throws IOException 
+	 */
+	public void runPlantMat(String file_name) throws IOException {
+		
+		PlantGlycosider plantglycosider = new PlantGlycosider();
+		// molecule validation
+		// TODO: implement pre validation by moleculer selection based on ml model, chemical property
+		
+		
+		if(file_name == null) {
+			System.out.println("Set the file name (superbio;allHuman)");
+			System.exit(0);
+		}
+		
+		
+		String current_dir = System.getProperty("user.dir");
+		
+		CSVWriter StatusWriter = new CSVWriter(new FileWriter(String.format("%s/generatedfolder/%s", current_dir,"PlantMatException.csv")));
+		final CSVParser parser = new CSVParserBuilder().withSeparator('\t').withIgnoreQuotations(true).build();
+		final CSVReaderBuilder builder = new CSVReaderBuilder(new FileReader(String.format("%s/generatedfolder/%s", current_dir,file_name)));
+		final CSVReader csvReader = builder.withCSVParser(parser).build();
+		
+		
+		String[] tmp;
+		while ((tmp = csvReader.readNext()) != null) {
+			
+			String compound_smiles = tmp[1];
+			String compound_inchikey = tmp[2];
+			
+			File existing_file = new File(String.format("%s/generatedSDF/%s.sdf", current_dir,compound_inchikey));
+			if(existing_file.exists()) {
+				// continue is kind of like goto `[is] tmp = csvReader.readNext()) != null`
+				continue;
+			}
+			
+			try {
+				int num = plantglycosider.TransformerFoodbSingleCompound(compound_smiles, compound_inchikey);
+				StatusWriter.writeNext(new String[] {compound_inchikey,Integer.toString(num)});
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				StatusWriter.writeNext(new String[] {compound_inchikey,"ProgramException"});
+			}
+			// check if the file already exist:
+		}
+		
+		csvReader.close();
+		StatusWriter.close();
+	}
+	
+	
 
 	
 	/**
@@ -395,31 +462,7 @@ public class PlantGlycosider {
 		PlantGlycosider fdb = new PlantGlycosider();
 									// int core, String file_name, int exception_time;
 		fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2]));
-		
-		System.exit(0);
-		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
-		IAtomContainer mole = CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2");
-		
-		int[] mole_index = new int[] {3};		
-		for(int i=0; i < mole_index.length;i++) {
-			mole.getAtom(mole_index[i]).setProperty("index", "mole");
-		}
-		
-		
-		IAtomContainerSet sugar_mole_set = builder.newInstance(IAtomContainerSet.class);
-		IAtomContainer sugar = CheminformaticUtility.parseSmilesToContainer("OCC1OC(O)CC1O");
-		sugar.getAtom(5).setProperty("index", "sugar");
-		//sugar_mole_set.addAtomContainer(CheminformaticUtility.TransformSmilesToContainer("OCC1(O)OCC(O)C(O)C1O",0));
-		sugar_mole_set.addAtomContainer(sugar);
-		IAtomContainer transformed_mole = GlycosiderUtility.CombineContainers(mole, mole_index, sugar_mole_set);
-		
-//		IAtomContainer mole = CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"); 
-//		IAtomContainer sugar = CheminformaticUtility.parseSmilesToContainer("OCC1(O)OCC(O)C(O)C1O");
-//		// should add property to sugar: atom 0; add property to mole: atom 3
-//		IAtomContainer transformed_mole = GlycosiderUtility.CombineContainers(mole, sugar);
-		
-		SmilesGenerator smigen = new SmilesGenerator(SmiFlavor.Isomeric);
-		System.out.println(smigen.create(transformed_mole));
+//		fdb.runPlantMat(args[0]);
 		
 	}
 	
@@ -431,9 +474,10 @@ public class PlantGlycosider {
 	 * @author xuan
 	 *
 	 */
-	private static class CallablePlantMat implements Callable<Boolean> {
+	private static class CallablePlantMat implements Callable<Integer> {
 		private String Smiles = new String();
 		private String inchikey = new String();
+
 		
 		public CallablePlantMat(String Smiles, String inchikey)
 		{
@@ -442,22 +486,21 @@ public class PlantGlycosider {
 		
 		}          
 		
-		public Boolean call() throws Exception{
+		public Integer call() throws Exception{
 			try {
 				PlantGlycosider plantglycosider = new PlantGlycosider();
 				
 				// molecule validation
 				// TODO: implement pre validation by moleculer selection based on ml model, chemical property
-				plantglycosider.TransformerFoodbSingleCompound(this.Smiles, this.inchikey);
+				int num = plantglycosider.TransformerFoodbSingleCompound(this.Smiles, this.inchikey);
 				// molecule selections from transformered metabolites
 				// TODO: implement post validation based on selecting the proper one (e.g. no more than five sugar etc.
 				
-				return true;
+				return num;
 			}
 			catch(Exception e) {
-				return false;
+				return 0;
 			}
-			
 			 
 	              
 		}

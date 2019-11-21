@@ -186,7 +186,7 @@ public class CheminformaticUtility {
 	public static void saveIAtomContainerToSDF(IAtomContainerSet uniqueContainer, String compound_inchikey) {
 		String current_dir = System.getProperty("user.dir");
 		try {
-			FileWriter fw = new FileWriter(String.format("%s/generatedfolder/%s.sdf", current_dir, compound_inchikey), true);
+			FileWriter fw = new FileWriter(String.format("%s/generatedSDF/%s.sdf", current_dir, compound_inchikey), true);
 			SDFWriter sdfwriter = new SDFWriter(fw);			        
 	        
 	        for(int i = 0; i < uniqueContainer.getAtomContainerCount(); i++) {
