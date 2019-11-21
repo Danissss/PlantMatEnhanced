@@ -1,8 +1,9 @@
 package WishartLab.PlantGlycosider;
 
-import org.openscience.cdk.graph.ConnectivityChecker;
-import org.openscience.cdk.interfaces.IAtom;
+import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtomContainer;
+
+import ambit2.smarts.query.SMARTSException;
 
 /**
  * Pre validation only validate two things: 
@@ -14,53 +15,37 @@ import org.openscience.cdk.interfaces.IAtomContainer;
  */
 public class PreValidation {
 	
-	
-	public boolean isCompoundValidate(IAtomContainer mole) {
-		boolean isValidate = true;
-		
-		// check for mixture
-		if(isMixture(mole)) {
-			return false;
-		}
-		
-		// check for organic
-		if(!containsCarbon(mole)) {
-			return false;
-		}
-		
-		
-		
-		
-		
-		return isValidate;
-		
-	}
-	
-	
 	/**
-	 * return true if mole is mixture
-	 * @param mole
-	 * @return
-	 */
-	private boolean isMixture(IAtomContainer mole) {
-		boolean is_mixture = ConnectivityChecker.partitionIntoMolecules(mole).getAtomContainerCount()>1;
-		return is_mixture;
-		
-	}
-	
-	/**
+	 * reject mixture
+	 * reject inorganic
+	 * reject more than 1000.0 mass
+	 * reject any compounds that include glucoside, sulfate and glycinate compound/attachments
 	 * 
 	 * @param mole
 	 * @return
 	 */
-	private boolean containsCarbon(IAtomContainer mole) {
-		boolean carbon = false;
-		for(IAtom at : mole.atoms()){
-			if(at.getAtomicNumber() == 6){
-				carbon = true;
-				break;
+	public boolean isCompoundValidate(IAtomContainer mole) {
+		boolean isValidate = false;
+
+		try {
+			boolean is_ppsValid = ChemStructureExplorer.isPPSValid(mole); // return true if is pps valid; false otherwise
+			boolean is_pure_sec_metabolites = ChemStructureExplorer.isPureSecondaryMetoblite(mole);
+			boolean is_polyphenol = ChemStructureExplorer.isPolyphenolOrDerivative(mole);
+			System.out.println(String.format("is_ppsValid = %b; "
+					+ "\nis_pure_sec_metabolites = %b; "
+					+ "\nis_polyphenol = %b; ", is_ppsValid,is_pure_sec_metabolites,is_polyphenol));
+			if(is_ppsValid && is_pure_sec_metabolites && is_polyphenol) {
+				isValidate = true;
 			}
-		}	
-		return carbon;
+		} catch (CDKException e) {
+			e.printStackTrace();
+		} catch (SMARTSException e) {
+			e.printStackTrace();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		
+		return isValidate;
+		
 	}
 }

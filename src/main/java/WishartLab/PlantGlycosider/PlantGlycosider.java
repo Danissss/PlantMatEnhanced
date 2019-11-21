@@ -34,8 +34,6 @@ import org.openscience.cdk.exception.InvalidSmilesException;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomContainerSet;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
-import org.openscience.cdk.smiles.SmiFlavor;
-import org.openscience.cdk.smiles.SmilesGenerator;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
@@ -221,9 +219,7 @@ public class PlantGlycosider {
 			
 			IAtomContainerSet sugar_mole_set = builder.newInstance(IAtomContainerSet.class);			
 			for(int i=0; i < mole_index.length;i++) {
-//				mole.getAtom(mole_index[i]).setProperty("index", "mole");
 				sugar_mole_set.addAtomContainer(CheminformaticUtility.TransformSugarSmilesToContainer(new_sugar_smiles[i],new_sugar_index[i]));
-				
 			}
 			
 			try {
@@ -258,12 +254,6 @@ public class PlantGlycosider {
 				new_sugar_index[i] = last_sugar_index;
 				sugar_mole_set.addAtomContainer(CheminformaticUtility.TransformSugarSmilesToContainer(last_smiles,last_sugar_index));
 			}
-			
-
-			
-//			for(int i=0; i < mole_index.length;i++) {
-//				mole.getAtom(mole_index[i]).setProperty("index", "mole");
-//			}
 			
 			try {
 				output = GlycosiderUtility.CombineContainers(mole,mole_index,sugar_mole_set);
