@@ -124,6 +124,31 @@ public class ChemStructureExplorer {
 	
 	
 	/**
+	 * https://www.intechopen.com/books/terpenes-and-terpenoids/introductory-chapter-terpenes-and-terpenoids
+	 * isoprene
+	 * Monoterpenes
+	 * sequitrepene
+	 * diterpene
+	 * sesterpene
+	 * triterpene
+	 * tetrateprene
+	 * @param mole
+	 * @return
+	 * @throws SMARTSException 
+	 */
+	public static boolean isTerpenoid(IAtomContainer mole) throws SMARTSException {
+		boolean is_prene = false;
+		String isoprene = "[#6]-[#6](=[#6])-[#6]=[#6]";
+		SmartsPatternCDK prenePattern 	=  new SmartsPatternCDK(isoprene);	
+		if(prenePattern.hasSMARTSPattern(mole) > 0) {
+			is_prene = true; 
+		}
+		return is_prene; 
+		
+	}
+	
+	
+	/**
 	 * Given a molecule A and a SMARTS expression S, list all occurrences of S
 	 * in A. Each occurrence is represented as an ArrayList of atom indexes.
 	 * 
@@ -354,7 +379,7 @@ public class ChemStructureExplorer {
 				);
 		
 		SmartsPatternCDK oMethylPattern 		=  new SmartsPatternCDK("[#6;A;H3X4][#8;X2R0]-[#6;R1]");		
-		SmartsPatternCDK flavonoidPattern 		=  new SmartsPatternCDK("[$([#6;R1]=,:1[#6;R1]=,:[#6;R1][#6;R1](=,:[#6;R1][#6;R1]=,:1)!@-[#6]-1-,=[#6;R1]-[#6;R1]-[#6]=,:2[#6;R1]=,:[#6;R1][#6;R1]=,:[#6;R1][#6]=,:2-[#8;R1]-1),"
+		SmartsPatternCDK flavonoidPattern 	=  new SmartsPatternCDK("[$([#6;R1]=,:1[#6;R1]=,:[#6;R1][#6;R1](=,:[#6;R1][#6;R1]=,:1)!@-[#6]-1-,=[#6;R1]-[#6;R1]-[#6]=,:2[#6;R1]=,:[#6;R1][#6;R1]=,:[#6;R1][#6]=,:2-[#8;R1]-1),"
 				+ "$(O=[#6]1[#6]=,:[#6]([#8][#6]2=,:[#6][#6]=,:[#6][#6]=,:[#6]12)-[#6]=,:1[#6]=,:[#6][#6]=,:[#6][#6]=,:1)"
 				+ "]");		
 		

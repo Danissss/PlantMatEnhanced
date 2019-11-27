@@ -18,24 +18,7 @@ import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 
 public class GlycosiderUtility {
 	
-	
-//	public static void saveIAtomContainerToSDF(IAtomContainer uniqueContainer) {
-//		String current_dir = System.getProperty("user.dir");
-//		try {
-//			FileWriter fw = new FileWriter(String.format("%s/generatedfolder/test.sdf", current_dir), true);
-//			SDFWriter sdfwriter = new SDFWriter(fw);			        
-//	        
-//			sdfwriter.write(AtomContainerManipulator.removeHydrogens(uniqueContainer));
-//			
-//			sdfwriter.close();
-//	        fw.close();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		} catch (CDKException e) {
-//			e.printStackTrace();
-//		}
-//        
-//	}
+
 	
 	/**
 	 * combine two IAtomContainer, they must have charge on the atom of interests

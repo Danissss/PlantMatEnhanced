@@ -8,6 +8,7 @@ import org.openscience.cdk.interfaces.IChemObjectBuilder;
 
 import WishartLab.PlantGlycosider.CheminformaticUtility;
 import WishartLab.PlantGlycosider.GlycosiderUtility;
+import WishartLab.PlantGlycosider.PostValidation;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -63,5 +64,13 @@ public class AppTest
 		
     }
     
+    
+    public void testPostValidation() throws CDKException {
+    		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
+		IAtomContainerSet mole = builder.newInstance(IAtomContainerSet.class);
+		mole.addAtomContainer(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
+		PostValidation pv = new PostValidation();
+		pv.validateCompound(mole);
+    }
     
 }

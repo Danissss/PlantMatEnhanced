@@ -111,7 +111,7 @@ public class PlantGlycosider {
 	 * @param mole
 	 * @throws Exception
 	 */
-	public IAtomContainerSet PreformTransformation(IAtomContainer mole, int restrictOH) throws Exception {
+	public IAtomContainerSet PreformTransformation(IAtomContainer mole) throws Exception {
 		
 		
 		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
@@ -120,13 +120,6 @@ public class PlantGlycosider {
 		
 		
 		Set<Integer> OH_list = CheminformaticUtility.GetOHList(mole); // return list of OH
-		
-		if (OH_list.size() > restrictOH) {
-			return result_mole;
-		}
-		
-		
-		
 		ArrayList<Integer[]> combined_list = new ArrayList<Integer[]>();
 		for(int i =  1; i <= OH_list.size(); i++) {
 			new_uti.permutations(OH_list, new Stack<Integer>(), i);
@@ -284,8 +277,39 @@ public class PlantGlycosider {
 		PlantGlycosider fdb = new PlantGlycosider();
 		try {
 			IAtomContainer mole = CheminformaticUtility.parseSmilesToContainer(smiles);
-			if (preval.isCompoundValidate(mole)) {
-				IAtomContainerSet transformedSmiles = fdb.PreformTransformation(mole,4);
+			IAtomContainerSet transformedSmiles = fdb.PreformTransformation(mole);
+			if (transformedSmiles.getAtomContainerCount() != 0) {
+				CheminformaticUtility.saveIAtomContainerSetToSDF(GlycosiderUtility.RemoveDupliation(transformedSmiles),inchikey);
+				total_num = transformedSmiles.getAtomContainerCount();
+			}
+			
+			
+		} catch (InvalidSmilesException e) {
+			 e.printStackTrace();
+		} catch (Exception e) {
+			 e.printStackTrace();
+		}
+		
+		return total_num;
+		
+		
+	}
+	
+	/**
+	 *
+	 * @param data_file
+	 * @throws IOException 
+	 * @throws InterruptedException 
+	 */
+	public int TransformerFoodbSingleCompoundWithValidation(String smiles,String inchikey) throws IOException, InterruptedException {
+		
+		int total_num = 0;
+		PlantGlycosider fdb = new PlantGlycosider();
+		try {
+			IAtomContainer mole = CheminformaticUtility.parseSmilesToContainer(smiles);
+			
+			if (preval.isCompoundValidate(mole)) { // prevaliation is for remove unwanted compound 
+				IAtomContainerSet transformedSmiles = fdb.PreformTransformation(mole);
 				if (transformedSmiles.getAtomContainerCount() != 0) {
 					IAtomContainerSet postValidateCompound = postval.validateCompound(transformedSmiles);
 					CheminformaticUtility.saveIAtomContainerSetToSDF(postValidateCompound, inchikey);
@@ -442,7 +466,7 @@ public class PlantGlycosider {
 		StatusWriter.close();
 	}
 	
-	
+
 
 	
 	/**
@@ -458,10 +482,21 @@ public class PlantGlycosider {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+//		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
+//		IAtomContainerSet mole = builder.newInstance(IAtomContainerSet.class);
+//		mole.addAtomContainer(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
+//		PostValidation pv = new PostValidation();
+//		pv.validateCompound(mole);
+//		
+//		System.exit(0);
+		
+		CreateSolubilityModel solModel = new CreateSolubilityModel();
+		solModel.buildLogSModel();
+		
+		System.exit(0);
 		
 		PlantGlycosider fdb = new PlantGlycosider();
-									// int core, String file_name, int exception_time;
-		fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2]));
+		fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2])); // int core, String file_name, int exception_time;
 //		fdb.runPlantMat(args[0]);
 		
 	}
