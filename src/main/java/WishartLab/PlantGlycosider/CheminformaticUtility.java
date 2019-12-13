@@ -15,6 +15,7 @@ import org.openscience.cdk.exception.InvalidSmilesException;
 import org.openscience.cdk.graph.ConnectivityChecker;
 import org.openscience.cdk.inchi.InChIGenerator;
 import org.openscience.cdk.inchi.InChIGeneratorFactory;
+import org.openscience.cdk.inchi.InChIToStructure;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomContainerSet;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
@@ -359,6 +360,26 @@ public class CheminformaticUtility {
 		}
 		
 		
+	}
+	
+	/**
+	 * get iatomcontainer from inchi
+	 * @param inchi
+	 * @return
+	 * @throws Exception
+	 */
+	public static IAtomContainer getAtomContainerFromInChI(String inchi) throws Exception {
+		InChIGeneratorFactory inchiFactory = InChIGeneratorFactory.getInstance();
+		InChIToStructure its = inchiFactory.getInChIToStructure(inchi, DefaultChemObjectBuilder.getInstance());
+		if(its == null) {
+			throw new Exception("InChI problem: " + inchi);
+		}
+		INCHI_RET ret = its.getReturnStatus();
+		if (ret == INCHI_RET.WARNING) {
+		} else if (ret != INCHI_RET.OKAY) {
+			throw new Exception("InChI problem: " + inchi);
+		}
+		return its.getAtomContainer();
 	}
 	
 	

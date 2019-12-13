@@ -1,11 +1,10 @@
 package WishartLab.PlantGlycosider;
 
+import java.io.FileNotFoundException;
 import org.openscience.cdk.DefaultChemObjectBuilder;
-import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomContainerSet;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
-import org.openscience.cdk.qsar.descriptors.molecular.ALOGPDescriptor;
 
 public class PostValidation {
 	
@@ -22,9 +21,10 @@ public class PostValidation {
 	 *  hydrophilic ("water-loving") or hydrophobic ("water-fearing") 
 	 * @param moleset
 	 * @return
-	 * @throws CDKException 
+	 * @throws Exception 
+	 * @throws FileNotFoundException 
 	 */
-	public IAtomContainerSet validateCompound(IAtomContainerSet moleset) throws CDKException {
+	public IAtomContainerSet validateCompound(IAtomContainerSet moleset) throws FileNotFoundException, Exception {
 		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
 		IAtomContainerSet result_mole = builder.newInstance(IAtomContainerSet.class);
 		
@@ -43,9 +43,10 @@ public class PostValidation {
 	 * validation logic
 	 * @param mole
 	 * @return
-	 * @throws CDKException 
+	 * @throws Exception 
+	 * @throws FileNotFoundException 
 	 */
-	private boolean isValidate(IAtomContainer mole) throws CDKException {
+	private boolean isValidate(IAtomContainer mole) throws FileNotFoundException, Exception {
 		boolean is_validate = true;
 		// Note The code assumes that aromaticity has been detected before evaluating this descriptor. 
 		// The code also expects that the molecule will have hydrogens explicitly set. For SD files, 
@@ -55,9 +56,10 @@ public class PostValidation {
 		// 1.ALogP - Ghose-Crippen LogKow
 		// 2.ALogP2
 		// 3.amr - molar refractivity
-		ALOGPDescriptor logp_descriptor = new ALOGPDescriptor();
-		String logp = logp_descriptor.calculate(mole).getValue().toString();
-		System.out.println(logp);		
+		CreateSolubilityModel logSmodel = new CreateSolubilityModel();
+		double logs = logSmodel.predictLogS(mole);
+		is_validate = logSmodel.isReasonableLogS(logs);
+		
 		
 		return is_validate;
 	}

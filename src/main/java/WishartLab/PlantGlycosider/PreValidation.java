@@ -39,12 +39,12 @@ public class PreValidation {
 			boolean is_ppsValid = ChemStructureExplorer.isPPSValid(mole); // return true if is pps valid; false otherwise
 			boolean is_pure_sec_metabolites = ChemStructureExplorer.isPureSecondaryMetoblite(mole);
 			boolean is_polyphenol = ChemStructureExplorer.isPolyphenolOrDerivative(mole);
-			boolean is_reasonable_oh = isReasonableOH(mole);
+//			boolean is_reasonable_oh = isReasonableOH(mole);
 			boolean is_terpene = ChemStructureExplorer.isTerpenoid(mole);
 			System.out.println(String.format("is_ppsValid = %b; "
 					+ "\nis_pure_sec_metabolites = %b; "
 					+ "\nis_polyphenol = %b; ", is_ppsValid,is_pure_sec_metabolites,is_polyphenol));
-			if(is_ppsValid && is_pure_sec_metabolites && is_reasonable_oh) {
+			if(is_ppsValid && is_pure_sec_metabolites) {
 				if(is_polyphenol || is_terpene) {
 					isValidate = true;
 				}

@@ -83,7 +83,7 @@ import weka.core.converters.ArffSaver;
 
 
 
-public class CreateSolubilityModel {
+public class CreateLogDModel {
 	
 	
 	private String current_dir = System.getProperty("user.dir");
@@ -371,9 +371,18 @@ public class CreateSolubilityModel {
 		
 		while (reader.hasNext()) {
 			IAtomContainer molecule = reader.next();
-			String logs = molecule.getProperty("logS");
-			double[] descValue = getDescriptorValues(molecule, Double.valueOf(logs),descriptors);
-			dataRaw.add(new DenseInstance(1.0, descValue));
+			
+			String logD = molecule.getProperty("LogD {measured}");
+			try {
+				String ph   = molecule.getProperty("pH");
+				if(Double.valueOf(ph) == 7.4) {
+					double[] descValue = getDescriptorValues(molecule, Double.valueOf(logD),descriptors);
+					dataRaw.add(new DenseInstance(1.0, descValue));
+				}
+			}catch (Exception e) {
+				continue;
+			}
+			
 		}
 	
 		reader.close();
@@ -388,7 +397,7 @@ public class CreateSolubilityModel {
 	 * @throws Exception 
 	 * @throws FileNotFoundException 
 	 */
-	public double predictLogS(IAtomContainer mole) throws FileNotFoundException, Exception {
+	public double predictLogD(IAtomContainer mole) throws FileNotFoundException, Exception {
 		
 		String[] descriptorName = getDescriptorNames();
 		ArrayList<Attribute> attributeNames = getAttributeNames(descriptorName);
@@ -413,7 +422,7 @@ public class CreateSolubilityModel {
 	 * @throws Exception 
 	 * @throws FileNotFoundException 
 	 */
-	public double predictLogS(IAtomContainer mole, ArrayList<Attribute> attributeNames,
+	public double predictLogD(IAtomContainer mole, ArrayList<Attribute> attributeNames,
 			ArrayList<IDescriptor> descriptors, RandomForest classifier ) throws FileNotFoundException, Exception {
 		
 		
@@ -433,7 +442,7 @@ public class CreateSolubilityModel {
 	 * @throws FileNotFoundException
 	 * @throws Exception
 	 */
-	public double[] predictLogS(IAtomContainerSet moleset) throws FileNotFoundException, Exception {
+	public double[] predictLogD(IAtomContainerSet moleset) throws FileNotFoundException, Exception {
 		
 		ArrayList<IDescriptor> descriptors = getSelectedDescriptors();
 		String[] descriptorName = getDescriptorNames();
@@ -520,7 +529,7 @@ public class CreateSolubilityModel {
 			try {
 				String phytohubid = moleset.getAtomContainer(i).getProperty("PhytohubID");
 				System.out.println(phytohubid);
-				double tmpresult = predictLogS(moleset.getAtomContainer(i),attributeNames,descriptors,classifier);
+				double tmpresult = predictLogD(moleset.getAtomContainer(i),attributeNames,descriptors,classifier);
 				result[i] = tmpresult;
 				moleset.getAtomContainer(i).removeAllElements();
 				
@@ -550,7 +559,7 @@ public class CreateSolubilityModel {
 	 * @param mole
 	 * @return
 	 */
-	public boolean isReasonableLogS(double logS) {
+	public boolean isReasonableLogD(double logS) {
 		double upper_logS = 7.0;
 		double lower_logS = -7.0;
 		if(logS >= lower_logS && logS <= upper_logS) {
@@ -564,15 +573,17 @@ public class CreateSolubilityModel {
 	 * 
 	 * @throws Exception
 	 */
-	public void buildLogSModel() throws Exception {
-		CreateSolubilityModel dewf = new CreateSolubilityModel();
+	public static void buildLogDModel() throws Exception {
+		
+		String current_dir = System.getProperty("user.dir");
+		CreateLogDModel dewf = new CreateLogDModel();
 		
 //		Instances dataset = dewf.getDataset(String.format("%s/generatedfolder/%s", current_dir, 
 //				"LogSData.tsv"));
-		Instances dataset = dewf.getDatasetFromSDF(String.format("%s/generatedfolder/%s", current_dir, 
-				"training_set_everything.sdf"));
+		String file_name = "logd_ochem.sdf";
+		Instances dataset = dewf.getDatasetFromSDF(String.format("%s/generatedfolder/%s", current_dir, file_name));
 		ArffSaver arffsave = new ArffSaver();
-		File outputFile = new File(String.format("%s/generatedfolder/%s.arff", current_dir,"LogSTraining_set_everything"));
+		File outputFile = new File(String.format("%s/generatedfolder/%s.arff", current_dir,file_name.replace(".sdf","")));
 		arffsave.setInstances(dataset);
 		arffsave.setFile(outputFile);
 		arffsave.writeBatch();
@@ -581,56 +592,6 @@ public class CreateSolubilityModel {
 		weka.core.SerializationHelper.write(String.format("%s/generatedfolder/%s.model", current_dir,"LogS"), classified);
 	}
 }
-
-
-// paper used following descriptors
-//org.openscience.cdk.qsar.descriptors.molecular.ALOGPDescriptor@16e7dcfd
-//org.openscience.cdk.qsar.descriptors.molecular.BCUTDescriptor@7219ec67
-//org.openscience.cdk.qsar.descriptors.molecular.FragmentComplexityDescriptor@61dd025
-//org.openscience.cdk.qsar.descriptors.molecular.APolDescriptor@3d121db3
-//org.openscience.cdk.qsar.descriptors.molecular.AromaticAtomsCountDescriptor@3b07a0d6
-//org.openscience.cdk.qsar.descriptors.molecular.AromaticBondsCountDescriptor@11a9e7c8
-//org.openscience.cdk.qsar.descriptors.molecular.AtomCountDescriptor@3901d134
-//org.openscience.cdk.qsar.descriptors.molecular.AutocorrelationDescriptorCharge@14d3bc22
-//org.openscience.cdk.qsar.descriptors.molecular.AutocorrelationDescriptorMass@12d4bf7e
-//org.openscience.cdk.qsar.descriptors.molecular.AutocorrelationDescriptorPolarizability@4c1d9d4b
-//org.openscience.cdk.qsar.descriptors.molecular.BondCountDescriptor@45018215
-//org.openscience.cdk.qsar.descriptors.molecular.BPolDescriptor@65d6b83b
-//org.openscience.cdk.qsar.descriptors.molecular.CarbonTypesDescriptor@d706f19
-//org.openscience.cdk.qsar.descriptors.molecular.ChiChainDescriptor@30b7c004
-//org.openscience.cdk.qsar.descriptors.molecular.ChiClusterDescriptor@79efed2d
-//org.openscience.cdk.qsar.descriptors.molecular.ChiPathDescriptor@27ae2fd0
-//org.openscience.cdk.qsar.descriptors.molecular.ChiPathClusterDescriptor@2928854b
-//org.openscience.cdk.qsar.descriptors.molecular.EccentricConnectivityIndexDescriptor@2f177a4b
-//org.openscience.cdk.qsar.descriptors.molecular.HBondDonorCountDescriptor@77167fb7
-//org.openscience.cdk.qsar.descriptors.molecular.HBondAcceptorCountDescriptor@15b204a1
-//org.openscience.cdk.qsar.descriptors.molecular.KierHallSmartsDescriptor@6973bf95 // smarts descriptor => fragment based descriptor
-//org.openscience.cdk.qsar.descriptors.molecular.KappaShapeIndicesDescriptor@6ce139a4
-//org.openscience.cdk.qsar.descriptors.molecular.LargestChainDescriptor@2ddc8ecb
-//org.openscience.cdk.qsar.descriptors.molecular.LargestPiSystemDescriptor@229d10bd
-//org.openscience.cdk.qsar.descriptors.molecular.RuleOfFiveDescriptor@25d250c6
-//org.openscience.cdk.qsar.descriptors.molecular.LongestAliphaticChainDescriptor@33afa13b
-//org.openscience.cdk.qsar.descriptors.molecular.PetitjeanNumberDescriptor@18ce0030
-//org.openscience.cdk.qsar.descriptors.molecular.PetitjeanShapeIndexDescriptor@4445629 // only extract topoShape
-//org.openscience.cdk.qsar.descriptors.molecular.RotatableBondsCountDescriptor@45b9a632
-//org.openscience.cdk.qsar.descriptors.molecular.TPSADescriptor@6b26e945
-//org.openscience.cdk.qsar.descriptors.molecular.VAdjMaDescriptor@54c562f7
-//org.openscience.cdk.qsar.descriptors.molecular.WeightDescriptor@318ba8c8
-//org.openscience.cdk.qsar.descriptors.molecular.WeightedPathDescriptor@6dbb137d
-//org.openscience.cdk.qsar.descriptors.molecular.WienerNumbersDescriptor@43301423
-//org.openscience.cdk.qsar.descriptors.molecular.XLogPDescriptor@2f112965
-//org.openscience.cdk.qsar.descriptors.molecular.ZagrebIndexDescriptor@1a04f701
-
-//ALOGPDescriptor alogp = new ALOGPDescriptor();
-//BCUTDescriptor bcut   = new BCUTDescriptor();
-//FragmentComplexityDescriptor fcd = new FragmentComplexityDescriptor();
-//APolDescriptor apol = new APolDescriptor();
-//AromaticAtomsCountDescriptor armc = new AromaticAtomsCountDescriptor();
-//AromaticBondsCountDescriptor abc = new AromaticBondsCountDescriptor();
-//AtomCountDescriptor atomc = new AtomCountDescriptor();
-//AutocorrelationDescriptorCharge acdc = new AutocorrelationDescriptorCharge();
-
-
 
 
 

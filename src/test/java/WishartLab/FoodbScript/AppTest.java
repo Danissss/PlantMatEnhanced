@@ -70,7 +70,7 @@ public class AppTest
 		IAtomContainerSet mole = builder.newInstance(IAtomContainerSet.class);
 		mole.addAtomContainer(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
 		PostValidation pv = new PostValidation();
-		pv.validateCompound(mole);
+//		pv.validateCompound(mole);
     }
     
 }

@@ -16,6 +16,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Stack;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.openscience.cdk.ConformerContainer;
 import org.openscience.cdk.DefaultChemObjectBuilder;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
@@ -152,10 +154,8 @@ public class PlantGlycosider {
 			}
 			
 			
-		}else{
-			// sugar_list.length > OH_list.size() and sugar_list.length = OH_list.size()
-			// if number of sugar is larger than position of OHs; 
-			// for each combined_list (list of array of OH position); add each sugar one at time	
+		}else{ // sugar_list.length > OH_list.size() and sugar_list.length = OH_list.size()
+			// if number of sugar is larger than position of OHs; for each combined_list (list of array of OH position); add each sugar one at time	
 			for(Integer[] s_list : combined_list) {
 				result_mole.add(permutatedCompoundInSmiles(mole,sugar_structure, sugerindex, sugar_list,s_list));		
 			}
@@ -313,15 +313,9 @@ public class PlantGlycosider {
 				if (transformedSmiles.getAtomContainerCount() != 0) {
 					IAtomContainerSet postValidateCompound = postval.validateCompound(transformedSmiles);
 					CheminformaticUtility.saveIAtomContainerSetToSDF(postValidateCompound, inchikey);
-					// may not need RemoveDuplication
-					// CheminformaticUtility.saveIAtomContainerSetToSDF(GlycosiderUtility.RemoveDupliation(transformedSmiles),inchikey);
 					total_num = postValidateCompound.getAtomContainerCount();
 				}
 			}
-			
-			
-			
-			
 			
 		} catch (InvalidSmilesException e) {
 			 e.printStackTrace();
@@ -418,7 +412,7 @@ public class PlantGlycosider {
 	 * @param exception_time The time limit for each job
 	 * @throws IOException 
 	 */
-	public void runPlantMat(String file_name) throws IOException {
+	public void runPlantMat(String file_name, boolean validation) throws IOException {
 		
 		PlantGlycosider plantglycosider = new PlantGlycosider();
 		// molecule validation
@@ -452,7 +446,13 @@ public class PlantGlycosider {
 			}
 			
 			try {
-				int num = plantglycosider.TransformerFoodbSingleCompound(compound_smiles, compound_inchikey);
+				int num = 0;
+				if(validation) {
+					num = plantglycosider.TransformerFoodbSingleCompoundWithValidation(compound_smiles, compound_inchikey);
+				}else {
+					num = plantglycosider.TransformerFoodbSingleCompound(compound_smiles, compound_inchikey);
+				}
+				
 				StatusWriter.writeNext(new String[] {compound_inchikey,Integer.toString(num)});
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -484,20 +484,26 @@ public class PlantGlycosider {
 	public static void main(String[] args) throws Exception {
 //		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
 //		IAtomContainerSet mole = builder.newInstance(IAtomContainerSet.class);
-//		mole.addAtomContainer(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
+//		mole.addAtomContainer();
 //		PostValidation pv = new PostValidation();
 //		pv.validateCompound(mole);
 //		
 //		System.exit(0);
 		
-		CreateSolubilityModel solModel = new CreateSolubilityModel();
-		solModel.buildLogSModel();
+//		CreateSolubilityModel solModel = new CreateSolubilityModel();
+//		ConformerContainer conformed_mole = new ConformerContainer(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
 		
+//		double result = solModel.predictLogS(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
+//		System.out.println(result);
+//		solModel.buildLogSModel();
+//		solModel.sampleDataset(args[0]);
+		CreateLogDModel.buildLogDModel();
 		System.exit(0);
-		
-		PlantGlycosider fdb = new PlantGlycosider();
-		fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2])); // int core, String file_name, int exception_time;
-//		fdb.runPlantMat(args[0]);
+//		
+//		
+//		PlantGlycosider fdb = new PlantGlycosider();
+//		fdb.runPlantMat(args[0], true);
+		// fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2])); // int core, String file_name, int exception_time;
 		
 	}
 	
@@ -525,11 +531,8 @@ public class PlantGlycosider {
 			try {
 				PlantGlycosider plantglycosider = new PlantGlycosider();
 				
-				// molecule validation
-				// TODO: implement pre validation by moleculer selection based on ml model, chemical property
-				int num = plantglycosider.TransformerFoodbSingleCompound(this.Smiles, this.inchikey);
-				// molecule selections from transformered metabolites
-				// TODO: implement post validation based on selecting the proper one (e.g. no more than five sugar etc.
+				// int num = plantglycosider.TransformerFoodbSingleCompound(this.Smiles, this.inchikey);
+				int num = plantglycosider.TransformerFoodbSingleCompoundWithValidation(this.Smiles, this.inchikey);
 				
 				return num;
 			}
