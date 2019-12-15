@@ -482,29 +482,17 @@ public class PlantGlycosider {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-//		IChemObjectBuilder builder = DefaultChemObjectBuilder.getInstance();
-//		IAtomContainerSet mole = builder.newInstance(IAtomContainerSet.class);
-//		mole.addAtomContainer();
-//		PostValidation pv = new PostValidation();
-//		pv.validateCompound(mole);
-//		
-//		System.exit(0);
+
+		PlantGlycosider fdb = new PlantGlycosider();
+		if(args[1] == "val") {
+			fdb.runPlantMat(args[0], true);
+		}else {
+			fdb.runPlantMat(args[0], false);
+		}
 		
-//		CreateSolubilityModel solModel = new CreateSolubilityModel();
-//		ConformerContainer conformed_mole = new ConformerContainer(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
 		
-//		double result = solModel.predictLogS(CheminformaticUtility.parseSmilesToContainer("CC1=C(O)C2=C3C(=C1)C1=CC=C(C=C1OC3(OC1=C2C=CC(O)=C1)C1=CC=CC=C1)C1=CC2=C(O1)C=CC=C2"));
-//		System.out.println(result);
-//		solModel.buildLogSModel();
-//		solModel.sampleDataset(args[0]);
-		CreateLogDModel.buildLogDModel();
-		System.exit(0);
-//		
-//		
-//		PlantGlycosider fdb = new PlantGlycosider();
-//		fdb.runPlantMat(args[0], true);
 		// fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2])); // int core, String file_name, int exception_time;
-		
+
 	}
 	
 	

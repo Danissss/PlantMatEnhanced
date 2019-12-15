@@ -71,11 +71,9 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 
-import weka.classifiers.Classifier;
-import weka.classifiers.Evaluation;
+
 import weka.classifiers.trees.RandomForest;
 import weka.core.Attribute;
-import weka.core.AttributeStats;
 import weka.core.DenseInstance;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
@@ -91,47 +89,6 @@ public class CreateSolubilityModel {
             null);
 	private DescriptorEngine descriptoEngine = new DescriptorEngine(classNames, null);
 	private String modelName = "LogSPredictor2019_11_27";
-	
-	
-	/**
-	 * running GenerateRegressor
-	 * @param dataset
-	 * @throws Exception 
-	 */
-	public Classifier GenerateRegressor(Instances dataset) throws Exception {
-		
-		dataset.setClass(dataset.attribute(dataset.numAttributes()-1));
-		dataset.randomize(new Random());
-		
-		
-		System.out.println(dataset.attribute(dataset.numAttributes()-1).toString());
-		AttributeStats attStats = dataset.attributeStats(dataset.numAttributes()-1);
-		System.out.println("=========================================================");
-		System.out.println("Instance statistics:");
-		System.out.println(attStats.toString());
-		
-		
-		RandomForest rf = new RandomForest();
-		rf.buildClassifier(dataset);
-		
-		
-		// do evaluation on current dataset and classifier
-		Evaluation evaluation = new Evaluation(dataset);
-		// this evaluation is based on classifier that used under cross validation; 
-		evaluation.crossValidateModel(rf, dataset, 10, new Random(1));
-		System.out.println("======== automatically cross validation =================");
-		System.out.println("Evaluation result:");
-		System.out.println(evaluation.toSummaryString());
-		System.out.println("=========================================================");
-	    String detailedMatrix = evaluation.toClassDetailsString();
-	    System.out.println(String.format("detailed matrix is => %s", detailedMatrix));
-	    
-	    
-	    
-		return rf;
-		
-	}
-	
 
 	
 	/**
@@ -399,7 +356,7 @@ public class CreateSolubilityModel {
 		dataRaw.add(new DenseInstance(1.0, descValue));
 		
 		RandomForest classifier = (RandomForest) SerializationHelper.read(
-				new FileInputStream(String.format("%s/generatedfolder/%s.model", current_dir,modelName)));
+				new FileInputStream(String.format("%s/model/%s.model", current_dir,modelName)));
 		dataRaw.setClass(dataRaw.attribute(dataRaw.numAttributes()-1));
 		double result = classifier.classifyInstance(dataRaw.get(0));
 		
@@ -446,7 +403,7 @@ public class CreateSolubilityModel {
 		}
 		dataRaw.setClass(dataRaw.attribute(dataRaw.numAttributes()-1));
 		RandomForest classifier = (RandomForest) SerializationHelper.read(
-				new FileInputStream(String.format("%s/generatedfolder/%s.model", current_dir,modelName)));
+				new FileInputStream(String.format("%s/model/%s.model", current_dir,modelName)));
 		double[] result = new double[moleset.getAtomContainerCount()];
 		for(int i = 0; i < dataRaw.size(); i++) {
 			double tmp = classifier.classifyInstance(dataRaw.get(i));
@@ -455,23 +412,6 @@ public class CreateSolubilityModel {
 		}
 		
 		return result;
-	}
-	
-	/**
-	 * 
-	 * @param chemaxonResultFile
-	 * @param MLResultFile
-	 */
-	public void benchmarking(String chemaxonResultFile, String MLResultFile) {
-		
-	}
-	
-	/**
-	 * 
-	 * @param datafile
-	 */
-	public void createLogSData(String datafile) {
-		
 	}
 	
 	/**
@@ -514,7 +454,7 @@ public class CreateSolubilityModel {
 		ArrayList<Attribute> attributeNames = getAttributeNames(descriptorName);
 		ArrayList<IDescriptor> descriptors = getSelectedDescriptors();
 		RandomForest classifier = (RandomForest) SerializationHelper.read(
-				new FileInputStream(String.format("%s/generatedfolder/%s.model", current_dir,modelName)));
+				new FileInputStream(String.format("%s/model/%s.model", current_dir,modelName)));
 		double[] result = new double[moleset.getAtomContainerCount()];
 		for (int i = 0; i < moleset.getAtomContainerCount(); i++) {
 			try {
@@ -536,9 +476,6 @@ public class CreateSolubilityModel {
 		}
 		
 		writer.writeAll(resultWritable);
-		
-		
-		
 		writer.close();
 		
 	}
@@ -547,12 +484,13 @@ public class CreateSolubilityModel {
 	/**
 	 * input calculated logS and return is reasonable
 	 * upper_logS and lower_logS are obtained from sampling phytohub data.
+	 * removed the outler both for upper and lower
 	 * @param mole
 	 * @return
 	 */
 	public boolean isReasonableLogS(double logS) {
-		double upper_logS = 7.0;
-		double lower_logS = -7.0;
+		double upper_logS = -1.0;
+		double lower_logS = -6.0;
 		if(logS >= lower_logS && logS <= upper_logS) {
 			return true;
 		}else{
@@ -576,9 +514,6 @@ public class CreateSolubilityModel {
 		arffsave.setInstances(dataset);
 		arffsave.setFile(outputFile);
 		arffsave.writeBatch();
-		System.exit(0);
-		Classifier classified = dewf.GenerateRegressor(dataset);
-		weka.core.SerializationHelper.write(String.format("%s/generatedfolder/%s.model", current_dir,"LogS"), classified);
 	}
 }
 

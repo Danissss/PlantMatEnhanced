@@ -47,7 +47,6 @@ public class PostValidation {
 	 * @throws FileNotFoundException 
 	 */
 	private boolean isValidate(IAtomContainer mole) throws FileNotFoundException, Exception {
-		boolean is_validate = true;
 		// Note The code assumes that aromaticity has been detected before evaluating this descriptor. 
 		// The code also expects that the molecule will have hydrogens explicitly set. For SD files, 
 		// this is usually not a problem since hydrogens are explicit. But for the case of molecules 
@@ -58,10 +57,13 @@ public class PostValidation {
 		// 3.amr - molar refractivity
 		CreateSolubilityModel logSmodel = new CreateSolubilityModel();
 		double logs = logSmodel.predictLogS(mole);
-		is_validate = logSmodel.isReasonableLogS(logs);
+		boolean is_LogSvalidate = logSmodel.isReasonableLogS(logs);
 		
+		CreateLogDModel logDmodel = new CreateLogDModel();
+		double logd = logDmodel.predictLogD(mole);
+		boolean is_LogDvalidate = logDmodel.isReasonableLogD(logd);
 		
-		return is_validate;
+		return (is_LogSvalidate&&is_LogDvalidate);
 	}
 	
 	/**

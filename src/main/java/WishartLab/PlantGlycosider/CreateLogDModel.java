@@ -90,49 +90,8 @@ public class CreateLogDModel {
 	private List<String> classNames = DescriptorEngine.getDescriptorClassNameByPackage("org.openscience.cdk.qsar.descriptors.molecular",
             null);
 	private DescriptorEngine descriptoEngine = new DescriptorEngine(classNames, null);
-	private String modelName = "LogSPredictor2019_11_27";
+	private String modelName = "LogDPredictor_RF";
 	
-	
-	/**
-	 * running GenerateRegressor
-	 * @param dataset
-	 * @throws Exception 
-	 */
-	public Classifier GenerateRegressor(Instances dataset) throws Exception {
-		
-		dataset.setClass(dataset.attribute(dataset.numAttributes()-1));
-		dataset.randomize(new Random());
-		
-		
-		System.out.println(dataset.attribute(dataset.numAttributes()-1).toString());
-		AttributeStats attStats = dataset.attributeStats(dataset.numAttributes()-1);
-		System.out.println("=========================================================");
-		System.out.println("Instance statistics:");
-		System.out.println(attStats.toString());
-		
-		
-		RandomForest rf = new RandomForest();
-		rf.buildClassifier(dataset);
-		
-		
-		// do evaluation on current dataset and classifier
-		Evaluation evaluation = new Evaluation(dataset);
-		// this evaluation is based on classifier that used under cross validation; 
-		evaluation.crossValidateModel(rf, dataset, 10, new Random(1));
-		System.out.println("======== automatically cross validation =================");
-		System.out.println("Evaluation result:");
-		System.out.println(evaluation.toSummaryString());
-		System.out.println("=========================================================");
-	    String detailedMatrix = evaluation.toClassDetailsString();
-	    System.out.println(String.format("detailed matrix is => %s", detailedMatrix));
-	    
-	    
-	    
-		return rf;
-		
-	}
-	
-
 	
 	/**
 	 * 
@@ -408,7 +367,7 @@ public class CreateLogDModel {
 		dataRaw.add(new DenseInstance(1.0, descValue));
 		
 		RandomForest classifier = (RandomForest) SerializationHelper.read(
-				new FileInputStream(String.format("%s/generatedfolder/%s.model", current_dir,modelName)));
+				new FileInputStream(String.format("%s/model/%s.model", current_dir,modelName)));
 		dataRaw.setClass(dataRaw.attribute(dataRaw.numAttributes()-1));
 		double result = classifier.classifyInstance(dataRaw.get(0));
 		
@@ -455,7 +414,7 @@ public class CreateLogDModel {
 		}
 		dataRaw.setClass(dataRaw.attribute(dataRaw.numAttributes()-1));
 		RandomForest classifier = (RandomForest) SerializationHelper.read(
-				new FileInputStream(String.format("%s/generatedfolder/%s.model", current_dir,modelName)));
+				new FileInputStream(String.format("%s/model/%s.model", current_dir,modelName)));
 		double[] result = new double[moleset.getAtomContainerCount()];
 		for(int i = 0; i < dataRaw.size(); i++) {
 			double tmp = classifier.classifyInstance(dataRaw.get(i));
@@ -466,22 +425,6 @@ public class CreateLogDModel {
 		return result;
 	}
 	
-	/**
-	 * 
-	 * @param chemaxonResultFile
-	 * @param MLResultFile
-	 */
-	public void benchmarking(String chemaxonResultFile, String MLResultFile) {
-		
-	}
-	
-	/**
-	 * 
-	 * @param datafile
-	 */
-	public void createLogSData(String datafile) {
-		
-	}
 	
 	/**
 	 * sampling dataset for upper logS and lower logS (phytohub, etc.)
@@ -498,8 +441,6 @@ public class CreateLogDModel {
 		
 		FileWriter fw = new FileWriter(String.format("%s/generatedfolder/%s", current_dir,"PhytoHubCompoundsInSDF.sdf"), true);
         SDFWriter sdfwriter = new SDFWriter(fw);
-        
-        
         
 		csvReader.readNext(); // skip the header
 //		System.out.println(Arrays.toString(csvReader.readNext()));
@@ -523,7 +464,7 @@ public class CreateLogDModel {
 		ArrayList<Attribute> attributeNames = getAttributeNames(descriptorName);
 		ArrayList<IDescriptor> descriptors = getSelectedDescriptors();
 		RandomForest classifier = (RandomForest) SerializationHelper.read(
-				new FileInputStream(String.format("%s/generatedfolder/%s.model", current_dir,modelName)));
+				new FileInputStream(String.format("%s/model/%s.model", current_dir,modelName)));
 		double[] result = new double[moleset.getAtomContainerCount()];
 		for (int i = 0; i < moleset.getAtomContainerCount(); i++) {
 			try {
@@ -538,16 +479,13 @@ public class CreateLogDModel {
 			}		
 			// System.gc();
 		}
-		final CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s/generatedfolder/%s", current_dir,"PhytoHubSampledLogS.csv")));
+		final CSVWriter writer = new CSVWriter(new FileWriter(String.format("%s/generatedfolder/%s", current_dir,"PhytoHubSampledLogD.csv")));
 		List<String[]> resultWritable = new ArrayList<String[]>();
 		for (int i = 0; i < result.length; i++) {
 			resultWritable.add(new String[] {String.valueOf(result[i])});
 		}
 		
 		writer.writeAll(resultWritable);
-		
-		
-		
 		writer.close();
 		
 	}
@@ -559,10 +497,10 @@ public class CreateLogDModel {
 	 * @param mole
 	 * @return
 	 */
-	public boolean isReasonableLogD(double logS) {
-		double upper_logS = 7.0;
-		double lower_logS = -7.0;
-		if(logS >= lower_logS && logS <= upper_logS) {
+	public boolean isReasonableLogD(double logD) {
+		double upper_logD = 3.0;
+		double lower_logD = -1.0;
+		if(logD >= lower_logD && logD <= upper_logD) {
 			return true;
 		}else{
 			return false;
@@ -577,9 +515,6 @@ public class CreateLogDModel {
 		
 		String current_dir = System.getProperty("user.dir");
 		CreateLogDModel dewf = new CreateLogDModel();
-		
-//		Instances dataset = dewf.getDataset(String.format("%s/generatedfolder/%s", current_dir, 
-//				"LogSData.tsv"));
 		String file_name = "logd_ochem.sdf";
 		Instances dataset = dewf.getDatasetFromSDF(String.format("%s/generatedfolder/%s", current_dir, file_name));
 		ArffSaver arffsave = new ArffSaver();
@@ -588,8 +523,6 @@ public class CreateLogDModel {
 		arffsave.setFile(outputFile);
 		arffsave.writeBatch();
 		System.exit(0);
-		Classifier classified = dewf.GenerateRegressor(dataset);
-		weka.core.SerializationHelper.write(String.format("%s/generatedfolder/%s.model", current_dir,"LogS"), classified);
 	}
 }
 
