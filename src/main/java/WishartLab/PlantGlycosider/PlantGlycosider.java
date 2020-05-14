@@ -16,7 +16,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Stack;
@@ -29,13 +28,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.openscience.cdk.ConformerContainer;
 import org.openscience.cdk.DefaultChemObjectBuilder;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomContainerSet;
 import org.openscience.cdk.interfaces.IChemObjectBuilder;
+import org.openscience.cdk.smiles.SmiFlavor;
+import org.openscience.cdk.smiles.SmilesGenerator;
+
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
@@ -277,13 +278,21 @@ public class PlantGlycosider {
 		PlantGlycosider fdb = new PlantGlycosider();
 		try {
 			IAtomContainer mole = CheminformaticUtility.parseSmilesToContainer(smiles);
-			IAtomContainerSet transformedSmiles = fdb.PreformTransformation(mole);
-			if (transformedSmiles.getAtomContainerCount() != 0) {
-				CheminformaticUtility.saveIAtomContainerSetToSDF(GlycosiderUtility.RemoveDupliation(transformedSmiles),inchikey);
-				total_num = transformedSmiles.getAtomContainerCount();
+			// if too much OH, the system will crash
+			Set<Integer> OH_list = CheminformaticUtility.GetOHList(mole); // return list of OH
+			
+			if (OH_list.size() <= 4) {
+				
+				IAtomContainerSet transformedSmiles = fdb.PreformTransformation(mole);
+				System.out.println("transformedSmiles " + transformedSmiles.getAtomContainerCount());
+				if (transformedSmiles.getAtomContainerCount() != 0) {
+					IAtomContainerSet duplicated_removed = GlycosiderUtility.RemoveDupliation(transformedSmiles);
+					System.out.println("duplicated_removed " + duplicated_removed.getAtomContainerCount());
+					CheminformaticUtility.saveIAtomContainerSetToSDF(duplicated_removed,inchikey);
+					total_num = duplicated_removed.getAtomContainerCount();
+				}
 			}
-			
-			
+
 		} catch (InvalidSmilesException e) {
 			 e.printStackTrace();
 		} catch (Exception e) {
@@ -310,10 +319,14 @@ public class PlantGlycosider {
 			
 			if (preval.isCompoundValidate(mole)) { // prevaliation is for remove unwanted compound 
 				IAtomContainerSet transformedSmiles = fdb.PreformTransformation(mole);
+//				System.out.println("transformedSmiles " + transformedSmiles.getAtomContainerCount());
 				if (transformedSmiles.getAtomContainerCount() != 0) {
 					IAtomContainerSet postValidateCompound = postval.validateCompound(transformedSmiles);
-					CheminformaticUtility.saveIAtomContainerSetToSDF(postValidateCompound, inchikey);
-					total_num = postValidateCompound.getAtomContainerCount();
+//					System.out.println("postValidateCompound: "+ postValidateCompound.getAtomContainerCount());
+					IAtomContainerSet duplicate_removed = GlycosiderUtility.RemoveDupliation(postValidateCompound);
+//					System.out.println("duplicate_removed: "+ duplicate_removed.getAtomContainerCount());
+					CheminformaticUtility.saveIAtomContainerSetToSDF(duplicate_removed,inchikey);
+					total_num = duplicate_removed.getAtomContainerCount();
 				}
 			}
 			
@@ -328,7 +341,15 @@ public class PlantGlycosider {
 		
 	}
 	
-	
+	/**
+	 *
+	 * @param data_file
+	 * @throws Exception 
+	 */
+	public IAtomContainerSet getGlycosideCompound(IAtomContainer mole) throws Exception {
+		PlantGlycosider fdb = new PlantGlycosider();
+		return fdb.PreformTransformation(mole);
+	}
 	
 	/**
 	 * 
@@ -428,17 +449,16 @@ public class PlantGlycosider {
 		String current_dir = System.getProperty("user.dir");
 		
 		CSVWriter StatusWriter = new CSVWriter(new FileWriter(String.format("%s/generatedfolder/%s", current_dir,"PlantMatException.csv")));
-		final CSVParser parser = new CSVParserBuilder().withSeparator('\t').withIgnoreQuotations(true).build();
+		final CSVParser parser = new CSVParserBuilder().withSeparator(',').withIgnoreQuotations(true).build();
 		final CSVReaderBuilder builder = new CSVReaderBuilder(new FileReader(String.format("%s/generatedfolder/%s", current_dir,file_name)));
 		final CSVReader csvReader = builder.withCSVParser(parser).build();
 		
 		
 		String[] tmp;
 		while ((tmp = csvReader.readNext()) != null) {
-			
 			String compound_smiles = tmp[1];
 			String compound_inchikey = tmp[2];
-			
+			System.out.println(compound_inchikey);
 			File existing_file = new File(String.format("%s/generatedSDF/%s.sdf", current_dir,compound_inchikey));
 			if(existing_file.exists()) {
 				// continue is kind of like goto `[is] tmp = csvReader.readNext()) != null`
@@ -466,6 +486,52 @@ public class PlantGlycosider {
 		StatusWriter.close();
 	}
 	
+	
+	/**
+	 * 
+	 * @param core Number of CPU core to utilize
+	 * @param filename The file path. The file should contain smiles
+	 * @param exception_time The time limit for each job
+	 * @throws IOException 
+	 */
+	public HashMap<String, String[]> runPlantMatAPI(String structure, String sugars) throws IOException {
+		// need pre-validation to make sure the input compound is not crazy OH or long fatty acid
+		// for demo purpose, we only set the number of sugar as 5 and no isomers 
+		// for the future release, think about how to allow the customized sugar structure.
+		
+		
+		
+		PlantGlycosider plantglycosider = new PlantGlycosider();
+		
+		if(sugars != null) {
+			
+		}
+		
+		HashMap<String, String[]> map = new HashMap<String, String[]>();
+		IAtomContainer mole = CheminformaticUtility.parseSmilesToContainer(structure);
+		if(mole == null) {
+			map.put("error", new String[] {"Input structure is not valid. Only accept valid smile string (e.g.CN1C=NC(C[C@H](N)C(O)=O)=C1))"});
+		}else {
+			try {
+				IAtomContainerSet result = plantglycosider.getGlycosideCompound(mole);
+				SmilesGenerator sg      = new SmilesGenerator(SmiFlavor.Generic);
+				String[] smiles = new String[result.getAtomContainerCount()];
+				for(int i = 0; i < result.getAtomContainerCount(); i++) {
+					smiles[i] = sg.create(result.getAtomContainer(i));
+				}
+				
+				map.put("result", smiles);
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				map.put("error", new String[] {"Something wrong with the program."});
+			}
+		}
+		
+		return map;
+		
+		
+	}
 
 
 	
@@ -482,13 +548,21 @@ public class PlantGlycosider {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-
+		
 		PlantGlycosider fdb = new PlantGlycosider();
-		if(args[1] == "val") {
-			fdb.runPlantMat(args[0], true);
-		}else {
-			fdb.runPlantMat(args[0], false);
+		fdb.TransformerFoodbSingleCompoundWithValidation("OC1=CC=CC=C1O", "YCIMNLLNPGFGHC-UHFFFAOYSA-N");
+		HashMap<String, String[]> result = fdb.runPlantMatAPI("OC1=CC=CC=C1O",null);
+		String[] smiles = result.get("result");
+		for(int i = 0; i < smiles.length; i++){
+			System.out.println(smiles[i]);
 		}
+		
+//		fdb.TransformerFoodbSingleCompound("OC1=CC=CC=C1O", "YCIMNLLNPGFGHC-UHFFFAOYSA-N");
+//		if(args[1].equals("val")) {
+//			fdb.runPlantMat(args[0], true);
+//		}else if(args[1].equals("nonval"))  {
+//			fdb.runPlantMat(args[0], false);
+//		}
 		
 		
 		// fdb.runPlantMatMultiThreading(Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2])); // int core, String file_name, int exception_time;
